@@ -1,0 +1,81 @@
+@startuml
+
+<style>
+queue {
+  BackGroundColor white
+}
+component {
+  BackGroundColor white
+}
+</style>
+
+'Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+'SPDX-License-Identifier: MIT (For details, see https://github.com/awslabs/aws-icons-for-plantuml/blob/master/LICENSE)
+
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v11.1/dist
+!includeurl AWSPuml/AWSCommon.puml
+' !includeurl AWSPuml/AWSSimplified.puml
+!includeurl AWSPuml/General/Internet.puml
+!includeurl AWSPuml/NetworkingContentDelivery/VirtualPrivateCloud.puml
+!includeurl AWSPuml/InternetOfThings/IoTMQTTProtocol.puml
+!includeurl AWSPuml/InternetOfThings/IoTCore.puml
+!includeurl AWSPuml/Database/Timestream.puml
+
+!define deviconsPuml https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v2.4.0
+!includeurl deviconsPuml/common.puml
+!include deviconsPuml/font-awesome-5/server.puml
+!include deviconsPuml/font-awesome-5/gitlab.puml
+!include deviconsPuml/font-awesome/gears.puml
+!include deviconsPuml/font-awesome/fire.puml
+!include deviconsPuml/font-awesome/clock_o.puml
+!include deviconsPuml/font-awesome/lock.puml
+!include deviconsPuml/font-awesome/cloud.puml
+
+!include deviconsPuml/devicons/nginx.puml
+!include deviconsPuml/devicons/mysql.puml
+!include deviconsPuml/devicons/redis.puml
+!include deviconsPuml/devicons/docker.puml
+!include deviconsPuml/devicons/linux.puml
+
+Internet(internet, Internet, "WWW") {
+  'Define AWS resources
+  'https://aws.amazon.com/blogs/iot/how-to-bridge-mosquitto-mqtt-broker-to-aws-iot/
+  IoTMQTTProtocol(iotMQTT, "IoT MQTT Protocol", "Bridge local MQTT with AWS IoT")
+  VirtualPrivateCloud(vpc, "VPC", "AWS") {
+    IoTCore(iot, "AWS IoT Core", "Iot Core")
+    Timestream(timestream, "Homeassistant", "Ingest event")
+  }
+}
+
+DEV_LINUX(debian,Fedora CoreOS,node){
+    together {
+        FA_CLOCK_O(crond,crond) #White
+        FA_FIRE(iptables,iptables) #White
+        component conbee as "Conbee II USB stick"
+    }
+
+    DEV_DOCKER(docker,docker,node)  {
+        FA_LOCK(letsencrypt,letsencrypt-client,node) #White
+        DEV_LINUX(hass,Homeassistant,node) #White
+        DEV_LINUX(mqtt,"MQTT broker",node) {
+		queue mqtt_topic
+	}
+        DEV_LINUX(z2m,"zigbee2mqtt",node) #White
+    }
+}
+
+
+internet ..> iptables : http
+
+iptables ..> hass : http
+mqtt_topic <-> hass
+mqtt_topic <-> z2m
+
+crond --> letsencrypt : starts every month
+conbee <-> z2m : usb device for zigbee communication
+
+mqtt --> iotMQTT : Bridge sensor data
+iotMQTT --> iot
+iot --> timestream : Ingest sensor data
+
+@enduml
